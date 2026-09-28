@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Applications{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Applications</h1>
+    <p class="subtitle">Track all your job applications</p>
+</div>
+
+<div class="card">
+    {% if applications %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Platform</th>
+                    <th>Status</th>
+                    <th>Documents</th>
+                    <th>Applied</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr id="app-row-{{ app.id }}">
+                    <td>
+                        <a href="/jobs/{{ app.job.id }}" class="link">{{ app.job.title[:40] }}{% if app.job.title|length > 40 %}...{% endif %}</a>
+                    </td>
+                    <td>{{ app.job.company }}</td>
+                    <td><span class="job-platform-badge platform-{{ app.job.platform }}">{{ app.job.platform }}</span></td>
+                    <td><span class="badge badge-{{ app.status }}">{{ app.status }}</span></td>
+                    <td>
+                        {% if app.cv_content %}📄{% endif %}
+                        {% if app.cover_letter_content %}✉️{% endif %}
+                    </td>
+                    <td class="text-muted text-sm">
+                        {{ app.applied_at.strftime('%m/%d/%Y') if app.applied_at else '-' }}
+                    </td>
+                    <td>
+                        <a href="/applications/{{ app.id }}/preview" class="btn btn-sm btn-ghost" id="btn-preview-{{ app.id }}">Preview</a>
+                        {% if app.status == 'ready' %}
+                        <form method="POST" action="/jobs/{{ app.job_id }}/apply" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-success" id="btn-apply-{{ app.id }}">Apply</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <span class="empty-icon-large">📝</span>
+        <h3>No applications yet</h3>
+        <p>Generate CVs for jobs to create applications</p>
+        <a href="/jobs?status=new" class="btn btn-primary">Browse Jobs</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JobFinder{% endblock %} — Autonomous Job Application System</title>
+    <meta name="description" content="AI-powered autonomous job application system">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <span class="logo-text">JobFinder</span>
+            </div>
+            <span class="logo-badge">AI</span>
+        </div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" id="nav-dashboard">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/jobs" class="nav-link {% if request.endpoint == 'jobs_list' %}active{% endif %}" id="nav-jobs">
+                <span class="nav-icon">💼</span>
+                <span>Jobs</span>
+            </a>
+            <a href="/applications" class="nav-link {% if request.endpoint == 'applications_list' %}active{% endif %}" id="nav-applications">
+                <span class="nav-icon">📝</span>
+                <span>Applications</span>
+            </a>
+            <a href="/emails" class="nav-link {% if request.endpoint == 'emails_list' %}active{% endif %}" id="nav-emails">
+                <span class="nav-icon">✉️</span>
+                <span>Emails</span>
+            </a>
+            <a href="/search-configs" class="nav-link {% if request.endpoint == 'search_configs' %}active{% endif %}" id="nav-search">
+                <span class="nav-icon">🔍</span>
+                <span>Search Config</span>
+            </a>
+            <a href="/profile" class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}" id="nav-profile">
+                <span class="nav-icon">👤</span>
+                <span>Profile</span>
+            </a>
+            <a href="/logs" class="nav-link {% if request.endpoint == 'logs_page' %}active{% endif %}" id="nav-logs">
+                <span class="nav-icon">📋</span>
+                <span>Activity Log</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="engine-control">
+                <div class="engine-status" id="engine-status-indicator">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="engine-status-text">Checking...</span>
+                </div>
+                <div class="engine-buttons">
+                    <button class="btn btn-sm btn-success" onclick="startEngine()" id="btn-start-engine">Start</button>
+                    <button class="btn btn-sm btn-danger" onclick="stopEngine()" id="btn-stop-engine">Stop</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}" onclick="this.remove()">
+                <span>{{ message }}</span>
+                <span class="flash-close">&times;</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Engine Control
+        async function startEngine() {
+            try {
+                const res = await fetch('/api/engine/start', { method: 'POST' });
+                const data = await res.json();
+                updateStatus();
+            } catch (e) {
+                console.error('Failed to start engine:', e);
+            }
+        }
+
+        async function stopEngine() {
+            try {
+                const res = await fetch('/api/engine/stop', { method: 'POST' });
+                const data = await res.json();
+                updateStatus();
+            } catch (e) {
+                console.error('Failed to stop engine:', e);
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/engine/status');
+                const data = await res.json();
+                const dot = document.getElementById('status-dot');
+                const text = document.getElementById('engine-status-text');
+
+                if (data.is_running) {
+                    dot.className = 'status-dot running';
+                    text.textContent = 'Running';
+                } else {
+                    dot.className = 'status-dot stopped';
+                    text.textContent = 'Stopped';
+                }
+
+                if (data.dry_run) {
+                    text.textContent += ' (Dry Run)';
+                }
+            } catch (e) {
+                console.error('Status check failed:', e);
+            }
+        }
+
+        // Auto-refresh status every 10 seconds
+        updateStatus();
+        setInterval(updateStatus, 10000);
+
+        // Auto-dismiss flash messages
+        setTimeout(() => {
+            document.querySelectorAll('.flash').forEach(el => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            });
+        }, 5000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

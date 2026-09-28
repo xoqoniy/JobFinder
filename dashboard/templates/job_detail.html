@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} — {{ job.company }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="/jobs" class="back-link">← Back to Jobs</a>
+    <h1>{{ job.title }}</h1>
+    <p class="subtitle">{{ job.company }} · {{ job.location or 'Location not specified' }}</p>
+</div>
+
+<div class="grid-2col">
+    <!-- Job Details -->
+    <div class="section">
+        <div class="card">
+            <div class="card-header">
+                <h2>Job Details</h2>
+                <span class="badge badge-{{ job.status }}">{{ job.status }}</span>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Platform</span>
+                    <span class="job-platform-badge platform-{{ job.platform }}">{{ job.platform }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Match Score</span>
+                    <span class="match-score {% if job.match_score >= 80 %}score-high{% elif job.match_score >= 50 %}score-mid{% else %}score-low{% endif %}">
+                        {{ job.match_score|int }}%
+                    </span>
+                </div>
+                {% if job.salary_min %}
+                <div class="detail-item">
+                    <span class="detail-label">Salary</span>
+                    <span>${{ "{:,.0f}".format(job.salary_min) }}{% if job.salary_max %} - ${{ "{:,.0f}".format(job.salary_max) }}{% endif %} {{ job.salary_currency }}</span>
+                </div>
+                {% endif %}
+                <div class="detail-item">
+                    <span class="detail-label">Posted</span>
+                    <span>{{ job.posted_date.strftime('%B %d, %Y') if job.posted_date else 'Unknown' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Job Type</span>
+                    <span>{{ job.job_type or 'Not specified' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Easy Apply</span>
+                    <span>{{ '✅ Yes' if job.is_easy_apply else '❌ No' }}</span>
+                </div>
+            </div>
+
+            {% if job.description %}
+            <div class="description-section">
+                <h3>Description</h3>
+                <div class="job-description">
+                    {{ job.description[:2000] }}
+                    {% if job.description|length > 2000 %}
+                    <span class="text-muted">... (truncated)</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card-actions">
+                <a href="{{ job.url }}" target="_blank" class="btn btn-primary" id="btn-view-original">View Original ↗</a>
+                {% if job.status == 'new' %}
+                <form method="POST" action="/jobs/{{ job.id }}/generate" style="display:inline">
+                    <button type="submit" class="btn btn-success" id="btn-generate-docs">🤖 Generate CV & Letter</button>
+                </form>
+                <form method="POST" action="/jobs/{{ job.id }}/skip" style="display:inline">
+                    <button type="submit" class="btn btn-ghost" id="btn-skip-job">Skip Job</button>
+                </form>
+                {% elif job.status in ['queued'] %}
+                <form method="POST" action="/jobs/{{ job.id }}/apply">
+                    <button type="submit" class="btn btn-success" id="btn-apply-now">🚀 Apply Now</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Info -->
+    <div class="section">
+        {% if application %}
+        <div class="card">
+            <div class="card-header">
+                <h2>Application</h2>
+                <span class="badge badge-{{ application.status }}">{{ application.status }}</span>
+            </div>
+
+            {% if application.applied_at %}
+            <p class="text-muted">Applied: {{ application.applied_at.strftime('%B %d, %Y at %H:%M') }}</p>
+            {% endif %}
+
+            {% if application.error_message %}
+            <div class="error-box">
+                <strong>Error:</strong> {{ application.error_message }}
+            </div>
+            {% endif %}
+
+            <div class="doc-previews">
+                {% if application.cv_content %}
+                <div class="doc-preview">
+                    <h3>📄 Generated CV</h3>
+                    <div class="doc-content">{{ application.cv_content[:1000] }}</div>
+                    <a href="/applications/{{ application.id }}/preview" class="btn btn-sm btn-ghost">View Full →</a>
+                </div>
+                {% endif %}
+
+                {% if application.cover_letter_content %}
+                <div class="doc-preview">
+                    <h3>✉️ Cover Letter</h3>
+                    <div class="doc-content">{{ application.cover_letter_content[:800] }}</div>
+                    <a href="/applications/{{ application.id }}/preview" class="btn btn-sm btn-ghost">View Full →</a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if application.status == 'ready' %}
+            <form method="POST" action="/jobs/{{ job.id }}/apply">
+                <button type="submit" class="btn btn-success btn-block" id="btn-submit-application">🚀 Submit Application</button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="empty-state">
+                <span class="empty-icon">📝</span>
+                <p>No application yet</p>
+                {% if job.status == 'new' %}
+                <form method="POST" action="/jobs/{{ job.id }}/generate">
+                    <button type="submit" class="btn btn-primary" id="btn-generate-first">Generate CV & Cover Letter</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

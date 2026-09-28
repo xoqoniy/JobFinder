@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Jobs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Job Listings</h1>
+    <p class="subtitle">{{ total }} jobs found across all platforms</p>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar">
+    <form method="GET" class="filters-form" id="filters-form">
+        <div class="filter-group">
+            <input type="text" name="search" value="{{ search }}" placeholder="Search jobs..." class="input" id="search-input">
+        </div>
+        <div class="filter-group">
+            <select name="status" class="select" id="status-filter" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                <option value="new" {% if status_filter == 'new' %}selected{% endif %}>New</option>
+                <option value="queued" {% if status_filter == 'queued' %}selected{% endif %}>Queued</option>
+                <option value="applied" {% if status_filter == 'applied' %}selected{% endif %}>Applied</option>
+                <option value="skipped" {% if status_filter == 'skipped' %}selected{% endif %}>Skipped</option>
+                <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+                <option value="review" {% if status_filter == 'review' %}selected{% endif %}>Review</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <select name="platform" class="select" id="platform-filter" onchange="this.form.submit()">
+                <option value="all" {% if platform_filter == 'all' %}selected{% endif %}>All Platforms</option>
+                <option value="linkedin" {% if platform_filter == 'linkedin' %}selected{% endif %}>LinkedIn</option>
+                <option value="indeed" {% if platform_filter == 'indeed' %}selected{% endif %}>Indeed</option>
+                <option value="glassdoor" {% if platform_filter == 'glassdoor' %}selected{% endif %}>Glassdoor</option>
+                <option value="remoteok" {% if platform_filter == 'remoteok' %}selected{% endif %}>RemoteOK</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-filter">Filter</button>
+    </form>
+</div>
+
+<!-- Jobs List -->
+<div class="jobs-grid">
+    {% for job in jobs %}
+    <div class="job-card" id="job-card-{{ job.id }}">
+        <div class="job-card-header">
+            <div class="job-platform-badge platform-{{ job.platform }}">{{ job.platform }}</div>
+            {% if job.match_score > 0 %}
+            <div class="match-score {% if job.match_score >= 80 %}score-high{% elif job.match_score >= 50 %}score-mid{% else %}score-low{% endif %}">
+                {{ job.match_score|int }}% match
+            </div>
+            {% endif %}
+        </div>
+
+        <h3 class="job-title">
+            <a href="/jobs/{{ job.id }}">{{ job.title }}</a>
+        </h3>
+        <p class="job-company">{{ job.company }}</p>
+        <p class="job-location">📍 {{ job.location or 'Not specified' }}</p>
+
+        {% if job.salary_min %}
+        <p class="job-salary">
+            💰 {{ "${:,.0f}".format(job.salary_min) }}{% if job.salary_max and job.salary_max != job.salary_min %} - {{ "${:,.0f}".format(job.salary_max) }}{% endif %} {{ job.salary_currency }}
+        </p>
+        {% endif %}
+
+        <div class="job-card-footer">
+            <span class="badge badge-{{ job.status }}">{{ job.status }}</span>
+            {% if job.is_easy_apply %}
+            <span class="badge badge-easy">Easy Apply</span>
+            {% endif %}
+            <div class="job-actions">
+                {% if job.status == 'new' %}
+                <form method="POST" action="/jobs/{{ job.id }}/generate" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-primary" id="btn-generate-{{ job.id }}">Generate CV</button>
+                </form>
+                <form method="POST" action="/jobs/{{ job.id }}/skip" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-ghost" id="btn-skip-{{ job.id }}">Skip</button>
+                </form>
+                {% elif job.status in ['queued', 'ready'] %}
+                <form method="POST" action="/jobs/{{ job.id }}/apply">
+                    <button type="submit" class="btn btn-sm btn-success" id="btn-apply-{{ job.id }}">Apply</button>
+                </form>
+                {% endif %}
+                <a href="{{ job.url }}" target="_blank" class="btn btn-sm btn-ghost" id="btn-view-{{ job.id }}">View ↗</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not jobs %}
+<div class="empty-state-large">
+    <span class="empty-icon-large">🔍</span>
+    <h3>No jobs found</h3>
+    <p>Try adjusting your filters or run a new scrape</p>
+    <button class="btn btn-primary" onclick="window.location.href='/'">Go to Dashboard</button>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if total > per_page %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}&status={{ status_filter }}&platform={{ platform_filter }}&search={{ search }}" class="btn btn-ghost">← Previous</a>
+    {% endif %}
+    <span class="page-info">Page {{ page }} of {{ (total / per_page)|int + 1 }}</span>
+    {% if page * per_page < total %}
+    <a href="?page={{ page+1 }}&status={{ status_filter }}&platform={{ platform_filter }}&search={{ search }}" class="btn btn-ghost">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

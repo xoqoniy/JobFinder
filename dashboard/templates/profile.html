@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Your Profile</h1>
+    <p class="subtitle">This information is used to generate tailored CVs and cover letters</p>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="profile-form">
+    <div class="grid-2col">
+        <!-- Personal Info -->
+        <div class="section">
+            <div class="card">
+                <h2 class="card-title">Personal Information</h2>
+
+                <div class="form-group">
+                    <label for="full_name">Full Name *</label>
+                    <input type="text" id="full_name" name="full_name"
+                        value="{{ profile.full_name if profile else '' }}"
+                        placeholder="John Doe" class="input" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email"
+                            value="{{ profile.email if profile else '' }}"
+                            placeholder="john@example.com" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" name="phone"
+                            value="{{ profile.phone if profile else '' }}"
+                            placeholder="+1 (555) 123-4567" class="input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location"
+                        value="{{ profile.location if profile else '' }}"
+                        placeholder="City, State/Country or Remote" class="input">
+                </div>
+
+                <div class="form-group">
+                    <label for="linkedin_url">LinkedIn URL</label>
+                    <input type="url" id="linkedin_url" name="linkedin_url"
+                        value="{{ profile.linkedin_url if profile else '' }}"
+                        placeholder="https://linkedin.com/in/yourprofile" class="input">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="github_url">GitHub URL</label>
+                        <input type="url" id="github_url" name="github_url"
+                            value="{{ profile.github_url if profile else '' }}"
+                            placeholder="https://github.com/username" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="portfolio_url">Portfolio URL</label>
+                        <input type="url" id="portfolio_url" name="portfolio_url"
+                            value="{{ profile.portfolio_url if profile else '' }}"
+                            placeholder="https://yoursite.com" class="input">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CV Upload -->
+        <div class="section">
+            <div class="card">
+                <h2 class="card-title">Base CV / Resume</h2>
+                <p class="text-muted">Upload your existing CV. The AI will use this as the foundation for generating tailored versions.</p>
+
+                <div class="file-upload" id="cv-upload-area">
+                    <input type="file" id="cv_file" name="cv_file" accept=".pdf,.docx,.txt,.md" class="file-input">
+                    <label for="cv_file" class="file-label">
+                        <span class="file-icon">📄</span>
+                        <span class="file-text">Drop your CV here or click to browse</span>
+                        <span class="file-hint">Supports: PDF, DOCX, TXT, MD</span>
+                    </label>
+                </div>
+
+                {% if profile and profile.base_cv_path %}
+                <div class="current-file">
+                    <span>📎 Current: <strong>{{ profile.base_cv_path.split('/')[-1].split('\\')[-1] }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <h2 class="card-title">Skills</h2>
+                <div class="form-group">
+                    <label for="skills">Technical Skills (comma-separated)</label>
+                    <input type="text" id="skills" name="skills"
+                        value="{% if profile and profile.skills %}{{ profile.skills | replace('[', '') | replace(']', '') | replace('\"', '') }}{% endif %}"
+                        placeholder="Python, JavaScript, AWS, Docker, React, SQL..." class="input">
+                    <span class="form-hint">The AI will highlight relevant skills for each job</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Width Sections -->
+    <div class="section">
+        <div class="card">
+            <h2 class="card-title">Professional Summary</h2>
+            <div class="form-group">
+                <label for="summary">Summary / Objective</label>
+                <textarea id="summary" name="summary" rows="4" class="input textarea"
+                    placeholder="Experienced software engineer with 5+ years in full-stack development...">{{ profile.summary if profile else '' }}</textarea>
+                <span class="form-hint">2-3 sentences. The AI will tailor this for each application.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="card">
+            <h2 class="card-title">Work Experience</h2>
+            <div class="form-group">
+                <label for="experience">Experience (JSON format)</label>
+                <textarea id="experience" name="experience" rows="12" class="input textarea code-input"
+                    placeholder='[
+  {
+    "title": "Senior Software Engineer",
+    "company": "TechCorp",
+    "location": "Remote",
+    "start_date": "2021-01",
+    "end_date": "Present",
+    "description": "Led development of microservices architecture...",
+    "achievements": [
+      "Reduced API latency by 40%",
+      "Mentored 3 junior developers"
+    ]
+  }
+]'>{{ profile.experience if profile else '' }}</textarea>
+                <span class="form-hint">Use JSON format for structured experience data</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2col">
+        <div class="section">
+            <div class="card">
+                <h2 class="card-title">Education</h2>
+                <div class="form-group">
+                    <label for="education">Education (JSON format)</label>
+                    <textarea id="education" name="education" rows="6" class="input textarea code-input"
+                        placeholder='[
+  {
+    "degree": "B.S. Computer Science",
+    "school": "MIT",
+    "year": "2018",
+    "gpa": "3.8"
+  }
+]'>{{ profile.education if profile else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="card">
+                <h2 class="card-title">Certifications</h2>
+                <div class="form-group">
+                    <label for="certifications">Certifications (comma-separated)</label>
+                    <input type="text" id="certifications" name="certifications"
+                        value="{% if profile and profile.certifications %}{{ profile.certifications | replace('[', '') | replace(']', '') | replace('\"', '') }}{% endif %}"
+                        placeholder="AWS Solutions Architect, Google Cloud Engineer..." class="input">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-save-profile">💾 Save Profile</button>
+    </div>
+</form>
+{% endblock %}

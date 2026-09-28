@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Emails{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Emails</h1>
+    <p class="subtitle">Follow-up emails, networking, and thank-you messages</p>
+</div>
+
+<div class="card">
+    {% if emails %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Recipient</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Sent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for email in emails %}
+                <tr id="email-{{ email.id }}">
+                    <td><span class="badge badge-{{ email.email_type }}">{{ email.email_type }}</span></td>
+                    <td>{{ email.recipient }}</td>
+                    <td>{{ email.subject[:50] }}{% if email.subject|length > 50 %}...{% endif %}</td>
+                    <td><span class="badge badge-{{ email.status }}">{{ email.status }}</span></td>
+                    <td class="text-muted text-sm">{{ email.sent_at.strftime('%m/%d %H:%M') if email.sent_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <span class="empty-icon-large">✉️</span>
+        <h3>No emails yet</h3>
+        <p>Follow-up emails will be generated automatically after applications</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

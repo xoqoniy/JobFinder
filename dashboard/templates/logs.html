@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Activity Log{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Activity Log</h1>
+    <p class="subtitle">Complete audit trail of all system actions</p>
+</div>
+
+<div class="card">
+    <div class="activity-feed-full">
+        {% for log in logs %}
+        <div class="activity-item-full activity-{{ log.level }}">
+            <div class="activity-time">{{ log.timestamp.strftime('%m/%d %H:%M:%S') if log.timestamp else '' }}</div>
+            <span class="activity-level-badge level-{{ log.level }}">{{ log.level }}</span>
+            <div class="activity-content-full">
+                <strong>{{ log.action }}</strong>
+                {% if log.details %}
+                <p class="text-muted">{{ log.details }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not logs %}
+    <div class="empty-state-large">
+        <span class="empty-icon-large">📋</span>
+        <h3>No activity yet</h3>
+        <p>Actions will be logged here as the engine runs</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

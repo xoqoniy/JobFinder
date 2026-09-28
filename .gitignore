@@ -1,0 +1,14 @@
+# JobFinder
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.db
+/screenshots/
+/generated_docs/
+/browser_data/
+.playwright/
+node_modules/
+*.egg-info/
+dist/
+build/

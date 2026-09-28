@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Search Config{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Search Configuration</h1>
+    <p class="subtitle">Define what jobs the engine should look for</p>
+</div>
+
+<!-- Add New Config -->
+<div class="section">
+    <div class="card">
+        <h2 class="card-title">Add Search Configuration</h2>
+        <form method="POST" class="config-form">
+            <div class="grid-2col">
+                <div class="form-group">
+                    <label for="name">Config Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g. Senior React Roles" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="job_title">Job Title / Keywords *</label>
+                    <input type="text" id="job_title" name="job_title" placeholder="Software Engineer" class="input" required>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" placeholder="Remote or City, Country" class="input">
+                </div>
+                <div class="form-group">
+                    <label for="experience_level">Experience Level</label>
+                    <select id="experience_level" name="experience_level" class="select">
+                        <option value="">Any</option>
+                        <option value="internship">Internship</option>
+                        <option value="entry">Entry Level</option>
+                        <option value="associate">Associate</option>
+                        <option value="mid" selected>Mid Level</option>
+                        <option value="director">Director</option>
+                        <option value="executive">Executive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="form-group">
+                    <label for="keywords">Include Keywords (comma-separated)</label>
+                    <input type="text" id="keywords" name="keywords" placeholder="React, Python, AWS" class="input">
+                </div>
+                <div class="form-group">
+                    <label for="exclude_keywords">Exclude Keywords (comma-separated)</label>
+                    <input type="text" id="exclude_keywords" name="exclude_keywords" placeholder="Senior, Lead, Manager" class="input">
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="form-group">
+                    <label for="platforms">Platforms (comma-separated)</label>
+                    <input type="text" id="platforms" name="platforms" value="linkedin,indeed,remoteok" class="input">
+                </div>
+                <div class="form-group">
+                    <label for="job_type">Job Type</label>
+                    <select id="job_type" name="job_type" class="select">
+                        <option value="">Any</option>
+                        <option value="full-time">Full Time</option>
+                        <option value="part-time">Part Time</option>
+                        <option value="contract">Contract</option>
+                        <option value="internship">Internship</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="remote_only" id="remote_only">
+                    <span>Remote only</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="btn-save-config">💾 Save Configuration</button>
+        </form>
+    </div>
+</div>
+
+<!-- Existing Configs -->
+{% if configs %}
+<div class="section">
+    <h2 class="section-title">Active Configurations</h2>
+    <div class="configs-grid">
+        {% for config in configs %}
+        <div class="card config-card {% if not config.is_active %}config-inactive{% endif %}" id="config-{{ config.id }}">
+            <div class="config-header">
+                <h3>{{ config.name }}</h3>
+                <span class="badge {% if config.is_active %}badge-submitted{% else %}badge-skipped{% endif %}">
+                    {{ 'Active' if config.is_active else 'Paused' }}
+                </span>
+            </div>
+            <div class="config-details">
+                <p><strong>Search:</strong> {{ config.job_title }}</p>
+                <p><strong>Location:</strong> {{ config.location or 'Any' }}</p>
+                <p><strong>Level:</strong> {{ config.experience_level or 'Any' }}</p>
+                <p><strong>Platforms:</strong> {{ config.platforms }}</p>
+                {% if config.keywords %}
+                <p><strong>Keywords:</strong> {{ config.keywords }}</p>
+                {% endif %}
+                <p><strong>Remote:</strong> {{ '✅' if config.remote_only else '❌' }}</p>
+            </div>
+            <div class="config-actions">
+                <form method="POST" action="/search-configs/{{ config.id }}/toggle" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-ghost" id="btn-toggle-{{ config.id }}">
+                        {{ '⏸️ Pause' if config.is_active else '▶️ Activate' }}
+                    </button>
+                </form>
+                <form method="POST" action="/search-configs/{{ config.id }}/delete" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-danger" id="btn-delete-{{ config.id }}"
+                        onclick="return confirm('Delete this search config?')">🗑️ Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

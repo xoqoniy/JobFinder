@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Preview — {{ job.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="/applications" class="back-link">← Back to Applications</a>
+    <h1>Document Preview</h1>
+    <p class="subtitle">{{ job.title }} at {{ job.company }}</p>
+</div>
+
+<div class="preview-tabs">
+    <button class="tab active" onclick="switchTab('cv')" id="tab-cv">📄 CV / Resume</button>
+    <button class="tab" onclick="switchTab('letter')" id="tab-letter">✉️ Cover Letter</button>
+</div>
+
+<div id="cv-panel" class="preview-panel active">
+    <div class="card preview-card">
+        <div class="preview-header">
+            <h2>Generated CV</h2>
+            <div class="preview-actions">
+                <button class="btn btn-sm btn-ghost" onclick="copyContent('cv')" id="btn-copy-cv">📋 Copy</button>
+                {% if application.cv_path %}
+                <a href="{{ application.cv_path }}" download class="btn btn-sm btn-ghost" id="btn-download-cv">💾 Download</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="preview-content markdown-body" id="cv-content">
+            {{ application.cv_content | replace('\n', '<br>') | safe if application.cv_content else '<p class="text-muted">No CV generated yet</p>' }}
+        </div>
+    </div>
+</div>
+
+<div id="letter-panel" class="preview-panel">
+    <div class="card preview-card">
+        <div class="preview-header">
+            <h2>Generated Cover Letter</h2>
+            <div class="preview-actions">
+                <button class="btn btn-sm btn-ghost" onclick="copyContent('letter')" id="btn-copy-letter">📋 Copy</button>
+                {% if application.cover_letter_path %}
+                <a href="{{ application.cover_letter_path }}" download class="btn btn-sm btn-ghost" id="btn-download-letter">💾 Download</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="preview-content markdown-body" id="letter-content">
+            {{ application.cover_letter_content | replace('\n', '<br>') | safe if application.cover_letter_content else '<p class="text-muted">No cover letter generated yet</p>' }}
+        </div>
+    </div>
+</div>
+
+{% if application.status == 'ready' %}
+<div class="form-actions" style="margin-top: 2rem;">
+    <form method="POST" action="/jobs/{{ job.id }}/apply">
+        <button type="submit" class="btn btn-success btn-lg" id="btn-submit-with-docs">🚀 Submit Application with These Documents</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.preview-panel').forEach(p => p.classList.remove('active'));
+
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        document.getElementById(`${tab}-panel`).classList.add('active');
+    }
+
+    function copyContent(type) {
+        const content = document.getElementById(`${type}-content`).innerText;
+        navigator.clipboard.writeText(content).then(() => {
+            const btn = document.getElementById(`btn-copy-${type}`);
+            btn.textContent = '✅ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+        });
+    }
+</script>
+{% endblock %}
