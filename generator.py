@@ -406,27 +406,30 @@ def rank_jobs(query: str, top_n: int = 20) -> list[int]:
             })
 
         prompt = f"""You are an expert tech recruiter and job matching specialist.
-Score each job from 0 to 100 based on the candidate's exact preferences:
+Score each job from 0 to 100 based on the candidate's exact profile and level:
 
-=== CANDIDATE PREFERENCES ===
-- Target Roles: Software Engineer, Full Stack Developer, Frontend Developer, Backend Developer, or Software / AI Intern
+=== CANDIDATE PROFILE & LEVEL ===
+- Stage: Undergraduate Student / Junior / Entry-Level Developer (0-2 years experience).
+- Target Roles: Junior Software Engineer, Junior Full Stack Developer, Junior Frontend Developer, Junior Backend Developer, or Software / AI Intern (Paid).
 - Location Rules:
-  * Remote positions: EXCELLENT match (100% location score)
-  * Hybrid or On-site: ONLY in Budapest, Hungary (100% location score). If hybrid/onsite in other cities/countries, score location very low.
-- Internships: MUST be paid. If a job is explicitly unpaid or volunteer, score it 0.
+  * Remote positions: EXCELLENT match.
+  * Hybrid or On-site: ONLY in Budapest, Hungary. If hybrid/onsite in other cities/countries, score 0.
+- Seniority Rules:
+  * If the job title or description is for Senior, Lead, Staff, Principal, Architect, Director, Manager, or requires 4+ years of experience: SCORE 0 (DISQUALIFIED).
+  * If the internship is unpaid/volunteer: SCORE 0 (DISQUALIFIED).
+  * Target sweet spot: Junior, Entry-Level, Associate, Graduate, Intern (Paid), or Software Engineer I.
 
-=== CANDIDATE PROFILE ===
+=== CANDIDATE DETAILS ===
 {json.dumps(profile, indent=2) if profile else base_cv[:2000]}
 Search query: {query}
 
 === JOBS TO SCORE ===
 {json.dumps(job_summaries, indent=2)}
 
-Scoring breakdown:
-1. Role Relevance (Software Eng / Full Stack / Frontend / Backend / Paid Intern) (35%)
-2. Technical Skills Match (Python, JS/TS, React, Node, C++, SQL, AI) (35%)
-3. Location (Remote OR Budapest Hybrid) (20%)
-4. Compensation / Paid check (10%) - Immediate 0 if unpaid internship.
+Scoring Guide:
+- 85-100: Junior / Entry / Intern role matching tech stack (Python, .NET, JS/React, AI, SQL) and location (Remote or Budapest).
+- 50-84: Generic entry/junior tech role with partial stack overlap.
+- 0: Senior / Lead / Staff / Architect / Unpaid intern / Non-Budapest physical location.
 
 Output ONLY a JSON array of objects with "id" and "score" keys, sorted by score descending.
 Example: [{{"id": 1, "score": 92}}, {{"id": 3, "score": 81}}]"""

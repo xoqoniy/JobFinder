@@ -21,6 +21,24 @@ logger = logging.getLogger(__name__)
 ua = UserAgent()
 
 
+EXCLUDED_SENIOR_KEYWORDS = [
+    "senior", "sr.", "sr ", "lead", "staff", "principal", "architect",
+    "director", "head of", "vp ", "vice president", "manager", "engineering manager",
+    "tech lead", "team lead", "level 3", "level 4", "level 5", "level 6",
+    "specialist ii", "specialist iii", "iii", "iv", "experienced"
+]
+
+
+def is_entry_level_or_junior(title: str) -> bool:
+    """Check if a job title is suitable for student / junior / entry-level / intern."""
+    title_lower = title.lower()
+    for bad_kw in EXCLUDED_SENIOR_KEYWORDS:
+        # Check as whole word or phrase
+        if re.search(r'\b' + re.escape(bad_kw) + r'\b', title_lower):
+            return False
+    return True
+
+
 class BaseScraper(ABC):
     """Base class for all job scrapers."""
 
@@ -44,11 +62,17 @@ class BaseScraper(ABC):
         pass
 
     def save_jobs(self, jobs: list[dict]) -> int:
-        """Save scraped jobs to database, skip duplicates."""
+        """Save scraped jobs to database, skip duplicates and senior roles."""
         db = get_session()
         saved = 0
         try:
             for job_data in jobs:
+                title = job_data.get("title", "Unknown")
+                
+                # Automatically skip senior/lead/manager roles
+                if not is_entry_level_or_junior(title):
+                    continue
+
                 existing = db.query(Job).filter_by(
                     external_id=job_data.get("external_id", "")
                 ).first()
