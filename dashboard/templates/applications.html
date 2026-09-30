@@ -40,10 +40,19 @@
                     </td>
                     <td>
                         <a href="/applications/{{ app.id }}/preview" class="btn btn-sm btn-ghost" id="btn-preview-{{ app.id }}">Preview</a>
+                        
                         {% if app.status == 'ready' %}
                         <form method="POST" action="/jobs/{{ app.job_id }}/apply" style="display:inline">
                             <button type="submit" class="btn btn-sm btn-success" id="btn-apply-{{ app.id }}">Apply</button>
                         </form>
+                        {% elif app.status in ['failed', 'pending'] %}
+                        <form method="POST" action="/jobs/{{ app.job_id }}/generate" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-primary" id="btn-retry-{{ app.id }}">Retry</button>
+                        </form>
+                        {% endif %}
+
+                        {% if app.job.url %}
+                        <a href="{{ app.job.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline" title="Open job page on {{ app.job.platform }}">↗ Open</a>
                         {% endif %}
                     </td>
                 </tr>

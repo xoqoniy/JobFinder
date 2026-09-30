@@ -195,10 +195,10 @@ class JobFinderEngine:
                     return
 
                 job = db.query(Job).get(job_id)
-                if not job or job.status not in ["new", "queued"]:
+                if not job or job.status not in ["new", "queued", "failed"]:
                     continue
 
-                # Skip if already has an application
+                # Skip if already has an application that succeeded
                 existing = db.query(Application).filter_by(job_id=job_id).first()
                 if existing and existing.status in ["submitted", "ready"]:
                     continue
