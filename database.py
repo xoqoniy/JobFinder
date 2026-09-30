@@ -152,8 +152,69 @@ class SearchConfig(Base):
 
 
 def init_db():
-    """Create all tables."""
+    """Create all tables and seed default profile if empty."""
     Base.metadata.create_all(engine)
+    
+    db = get_session()
+    try:
+        profile = db.query(UserProfile).first()
+        if not profile:
+            import os
+            import json
+            
+            cv_path = ""
+            for candidate in ["SafarmurodAshurovCV.pdf", "my_cv.pdf", "cv.pdf", "resume.pdf"]:
+                if os.path.exists(candidate):
+                    cv_path = candidate
+                    break
+            
+            skills_list = [
+                "Python", "JavaScript", "TypeScript", "C++", "Dart", "Flutter",
+                "FastAPI", "Flask", "SQL", "PostgreSQL", "Machine Learning",
+                "Artificial Intelligence", "Docker", "Git", "Linux", "REST APIs"
+            ]
+            
+            db.add(UserProfile(
+                full_name="Safarmurod Ashurov",
+                email="sm.ashurov7@gmail.com",
+                phone="(+36) 705401469",
+                location="Hungary / Remote",
+                linkedin_url="https://www.linkedin.com/in/safarmurod-ashurov/",
+                github_url="https://github.com/xoqoniy",
+                portfolio_url="https://www.instagram.com/codedpolymath/",
+                summary="Computer Science student specializing in Artificial Intelligence with hands-on experience in full-stack engineering, machine learning models, autonomous systems, and backend development.",
+                skills=json.dumps(skills_list),
+                experience=json.dumps([
+                    {
+                        "title": "Software & AI Developer",
+                        "company": "Projects & Freelance",
+                        "location": "Remote",
+                        "start_date": "2023",
+                        "end_date": "Present",
+                        "description": "Building full-stack web applications, AI automation tools, and autonomous agent frameworks.",
+                        "achievements": [
+                            "Engineered autonomous web automation engines with Playwright and LLM integrations.",
+                            "Developed high-performance REST APIs and microservices in Python and FastAPI."
+                        ]
+                    }
+                ]),
+                education=json.dumps([
+                    {
+                        "degree": "B.Sc. in Computer Science (Artificial Intelligence Specialization)",
+                        "school": "University",
+                        "year": "2026"
+                    }
+                ]),
+                certifications=json.dumps(["AI & Machine Learning Foundations", "Full-Stack Software Engineering"]),
+                base_cv_path=cv_path
+            ))
+            db.commit()
+            print("Auto-seeded default UserProfile in database.")
+    except Exception as e:
+        db.rollback()
+        print(f"UserProfile seed error: {e}")
+    finally:
+        db.close()
 
 
 def get_session():
@@ -164,3 +225,4 @@ def get_session():
 if __name__ == "__main__":
     init_db()
     print("Database initialized successfully.")
+

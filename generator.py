@@ -25,11 +25,47 @@ def _get_client():
     return genai.Client(api_key=GEMINI_API_KEY)
 
 
+FALLBACK_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-flash-latest",
+    "gemini-2.5-pro",
+]
+
+
+def _call_gemini(client, prompt: str, config=None):
+    """Call Gemini with automatic model fallback on temporary high demand / rate limits."""
+    last_error = None
+    for model_name in FALLBACK_MODELS:
+        try:
+            if config:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config,
+                )
+            else:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+            return response
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Model {model_name} failed ({e}), trying next fallback model...")
+            continue
+    raise last_error
+
+
 def _get_user_profile() -> dict:
-    """Load user profile from database."""
+    """Load user profile from database, auto-seeding if empty."""
+    from database import init_db
     db = get_session()
     try:
         profile = db.query(UserProfile).first()
+        if not profile:
+            init_db()
+            profile = db.query(UserProfile).first()
         if not profile:
             return {}
         return {
@@ -52,16 +88,24 @@ def _get_user_profile() -> dict:
 
 def _load_base_cv() -> str:
     """Load the base CV text if available."""
+    from cv_parser import parse_cv
     db = get_session()
     try:
         profile = db.query(UserProfile).first()
         if profile and profile.base_cv_path:
             cv_path = Path(profile.base_cv_path)
             if cv_path.exists():
-                # Handle text-based CVs
-                if cv_path.suffix.lower() in [".txt", ".md"]:
-                    return cv_path.read_text(encoding="utf-8")
-                # For PDF/DOCX, we'd need extraction (handled during profile setup)
+                try:
+                    return parse_cv(str(cv_path))
+                except Exception as e:
+                    logger.warning(f"Failed to parse base CV: {e}")
+        # Also check current directory for SafarmurodAshurovCV.pdf or any pdf
+        for candidate in ["SafarmurodAshurovCV.pdf", "my_cv.pdf", "cv.pdf"]:
+            if Path(candidate).exists():
+                try:
+                    return parse_cv(candidate)
+                except Exception:
+                    pass
         return ""
     finally:
         db.close()
@@ -121,9 +165,9 @@ Description: {job.description[:3000] if job.description else 'Not available'}
 Output ONLY the CV content in Markdown format, nothing else."""
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
+        response = _call_gemini(
+            client,
+            prompt,
             config=types.GenerateContentConfig(
                 temperature=0.7,
                 max_output_tokens=4000,
@@ -190,9 +234,9 @@ Description: {job.description[:3000] if job.description else 'Not available'}
 Output ONLY the cover letter in Markdown format, nothing else."""
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
+        response = _call_gemini(
+            client,
+            prompt,
             config=types.GenerateContentConfig(
                 temperature=0.8,
                 max_output_tokens=2000,
@@ -244,9 +288,9 @@ Requirements:
 Output as JSON with keys "subject" and "body". Output ONLY valid JSON, nothing else."""
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
+        response = _call_gemini(
+            client,
+            prompt,
             config=types.GenerateContentConfig(
                 temperature=0.7,
                 max_output_tokens=1000,
@@ -380,9 +424,9 @@ Score each job 0-100 based on:
 Output ONLY a JSON array of objects with "id" and "score" keys, sorted by score descending.
 Example: [{{"id": 1, "score": 85}}, {{"id": 3, "score": 72}}]"""
 
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
+        response = _call_gemini(
+            client,
+            prompt,
             config=types.GenerateContentConfig(
                 temperature=0.3,
                 max_output_tokens=2000,
