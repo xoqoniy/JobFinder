@@ -226,7 +226,7 @@ class LinkedInScraper(BaseScraper):
 
 
 class IndeedScraper(BaseScraper):
-    """Scrapes Indeed job listings."""
+    """Scrapes Indeed job listings (supports US and hu.indeed.com for Budapest/Hungary)."""
 
     PLATFORM = "indeed"
     BASE_URL = "https://www.indeed.com/jobs"
@@ -235,6 +235,9 @@ class IndeedScraper(BaseScraper):
         """Search Indeed jobs."""
         jobs = []
         max_pages = kwargs.get("max_pages", 3)
+
+        # Route to hu.indeed.com if searching Budapest or Hungary
+        base_url = "https://hu.indeed.com/jobs" if any(k in (location or "").lower() for k in ["budapest", "hungary", "magyarország"]) else self.BASE_URL
 
         for page in range(max_pages):
             params = {
@@ -261,7 +264,7 @@ class IndeedScraper(BaseScraper):
 
             try:
                 self.session.headers["User-Agent"] = ua.random
-                resp = self.session.get(self.BASE_URL, params=params, timeout=15)
+                resp = self.session.get(base_url, params=params, timeout=15)
                 resp.raise_for_status()
 
                 soup = BeautifulSoup(resp.text, "lxml")
@@ -479,6 +482,89 @@ class RemoteOKScraper(BaseScraper):
         return jobs
 
 
+class NoFluffJobsScraper(BaseScraper):
+    """
+    Scrapes NoFluffJobs Hungary / EU tech job listings via their public API.
+    Specialized in tech, junior, trainee, hybrid Budapest, and remote jobs with explicit salaries.
+    """
+
+    PLATFORM = "nofluffjobs"
+    API_URL = "https://nofluffjobs.com/api/posting"
+
+    def search(self, query: str, location: str = "", **kwargs) -> list[dict]:
+        """Search NoFluffJobs Hungary."""
+        jobs = []
+        try:
+            self.session.headers.update({"User-Agent": ua.random, "Accept": "application/json"})
+            resp = self.session.get(self.API_URL, params={"region": "hu"}, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+            postings = data.get("postings", [])
+
+            query_terms = [q.lower() for q in query.split() if len(q) > 2]
+            target_loc = (location or "").lower()
+
+            for item in postings:
+                title = item.get("title", "")
+                company = item.get("name", "")
+                technology = item.get("technology", "")
+                seniority = [s.lower() for s in item.get("seniority", [])]
+
+                # Drop senior roles
+                if "senior" in seniority or "lead" in seniority or "expert" in seniority:
+                    continue
+
+                places_data = item.get("location", {})
+                places_str = str(places_data).lower()
+
+                # Location check: Budapest or Hungary or Remote
+                is_budapest = "budapest" in places_str or "hungary" in places_str
+                is_remote = item.get("fullyRemote", False) or "remote" in places_str
+
+                if target_loc and "budapest" in target_loc and not (is_budapest or is_remote):
+                    continue
+
+                # Query matching
+                search_text = f"{title} {company} {technology} {' '.join(seniority)}".lower()
+                if query_terms and not any(term in search_text for term in query_terms):
+                    continue
+
+                # Salary
+                salary_min = salary_max = None
+                salary_curr = "HUF"
+                salary_info = item.get("salary", {})
+                if salary_info:
+                    salary_min = salary_info.get("from")
+                    salary_max = salary_info.get("to")
+                    salary_curr = salary_info.get("currency", "HUF")
+
+                url_slug = item.get("url", "")
+                job_url = f"https://nofluffjobs.com/hu/job/{url_slug}" if url_slug else "https://nofluffjobs.com/hu"
+
+                jobs.append({
+                    "external_id": f"nfj_{item.get('id', hash(job_url) & 0xFFFFFFFF)}",
+                    "title": title,
+                    "company": company,
+                    "location": "Budapest, Hungary (Hybrid/Remote)" if is_budapest else "Remote",
+                    "url": job_url,
+                    "apply_url": job_url,
+                    "description": f"Technology: {technology}. Seniority: {', '.join(seniority)}. Location: {places_str[:100]}",
+                    "salary_min": salary_min,
+                    "salary_max": salary_max,
+                    "salary_currency": salary_curr,
+                    "job_type": "internship" if ("trainee" in seniority or "intern" in seniority) else "full-time",
+                    "posted_date": datetime.datetime.utcnow(),
+                    "is_easy_apply": False,
+                })
+
+            logger.info(f"NoFluffJobs: found {len(jobs)} jobs for '{query}' in '{location}'")
+
+        except Exception as e:
+            logger.error(f"NoFluffJobs scrape error: {e}")
+
+        return jobs
+
+
 def get_scraper(platform: str) -> BaseScraper:
     """Factory to get the right scraper by platform name."""
     scrapers = {
@@ -486,6 +572,7 @@ def get_scraper(platform: str) -> BaseScraper:
         "indeed": IndeedScraper,
         "glassdoor": GlassdoorScraper,
         "remoteok": RemoteOKScraper,
+        "nofluffjobs": NoFluffJobsScraper,
     }
     cls = scrapers.get(platform.lower())
     if not cls:
@@ -499,7 +586,7 @@ def scrape_all(query: str, location: str = "", platforms: list[str] = None, **kw
     Returns a summary dict: {platform: count_saved}
     """
     if platforms is None:
-        platforms = ["linkedin", "indeed", "remoteok"]
+        platforms = ["linkedin", "indeed", "remoteok", "nofluffjobs"]
 
     results = {}
     for platform in platforms:

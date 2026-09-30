@@ -221,7 +221,7 @@ def init_db():
                     remote_only=True,
                     experience_level="entry,junior",
                     exclude_keywords="senior,sr,lead,staff,principal,architect,manager,unpaid",
-                    platforms="linkedin,indeed,remoteok",
+                    platforms="linkedin,indeed,remoteok,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -232,7 +232,7 @@ def init_db():
                     keywords="Python,.NET,C#,FastAPI,SQL",
                     experience_level="entry,junior",
                     exclude_keywords="senior,sr,lead,staff,principal,architect,manager,unpaid",
-                    platforms="linkedin,indeed,remoteok",
+                    platforms="linkedin,indeed,remoteok,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -243,7 +243,7 @@ def init_db():
                     keywords="React,JavaScript,TypeScript",
                     experience_level="entry,junior",
                     exclude_keywords="senior,sr,lead,staff,principal,architect,manager,unpaid",
-                    platforms="linkedin,indeed,remoteok",
+                    platforms="linkedin,indeed,remoteok,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -253,7 +253,7 @@ def init_db():
                     keywords="hybrid,budapest,junior,entry",
                     experience_level="entry,junior",
                     exclude_keywords="senior,sr,lead,staff,principal,architect,manager,unpaid",
-                    platforms="linkedin,indeed",
+                    platforms="linkedin,indeed,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -263,7 +263,7 @@ def init_db():
                     keywords="hybrid,budapest,junior",
                     experience_level="entry,junior",
                     exclude_keywords="senior,sr,lead,staff,principal,architect,manager,unpaid",
-                    platforms="linkedin,indeed",
+                    platforms="linkedin,indeed,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -272,7 +272,7 @@ def init_db():
                     location="Budapest, Hungary",
                     keywords="paid,intern,internship,trainee,student",
                     exclude_keywords="senior,sr,unpaid,uncompensated,volunteer,no pay,free intern",
-                    platforms="linkedin,indeed,remoteok",
+                    platforms="linkedin,indeed,remoteok,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -282,7 +282,7 @@ def init_db():
                     remote_only=True,
                     keywords="paid,intern,internship,trainee",
                     exclude_keywords="senior,sr,unpaid,uncompensated,volunteer",
-                    platforms="linkedin,indeed,remoteok",
+                    platforms="linkedin,indeed,remoteok,nofluffjobs",
                     is_active=True,
                 ),
                 SearchConfig(
@@ -292,7 +292,7 @@ def init_db():
                     remote_only=True,
                     experience_level="entry,junior",
                     exclude_keywords="senior,sr,lead,staff,principal,architect,manager,unpaid",
-                    platforms="linkedin,indeed,remoteok",
+                    platforms="linkedin,indeed,remoteok,nofluffjobs",
                     is_active=True,
                 ),
             ]
