@@ -115,17 +115,31 @@ CV Text:
 
 Output ONLY valid JSON, nothing else."""
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.3,
-                max_output_tokens=3000,
-                response_mime_type="application/json",
-            ),
-        )
+        models_to_try = [
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-flash-latest",
+            "gemini-3.8-flash",
+        ]
 
-        return json.loads(response.text)
+        last_err = None
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.3,
+                        max_output_tokens=3000,
+                        response_mime_type="application/json",
+                    ),
+                )
+                return json.loads(response.text)
+            except Exception as ex:
+                last_err = ex
+                continue
+
+        raise last_err
 
     except Exception as e:
         logger.error(f"CV extraction failed: {e}")
