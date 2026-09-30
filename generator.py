@@ -405,24 +405,31 @@ def rank_jobs(query: str, top_n: int = 20) -> list[int]:
                 "description": (j.description or "")[:500],
             })
 
-        client = _get_client()
-        prompt = f"""You are a job matching expert. Score how well each job matches this candidate's profile.
+        prompt = f"""You are an expert tech recruiter and job matching specialist.
+Score each job from 0 to 100 based on the candidate's exact preferences:
 
-=== CANDIDATE ===
+=== CANDIDATE PREFERENCES ===
+- Target Roles: Software Engineer, Full Stack Developer, Frontend Developer, Backend Developer, or Software / AI Intern
+- Location Rules:
+  * Remote positions: EXCELLENT match (100% location score)
+  * Hybrid or On-site: ONLY in Budapest, Hungary (100% location score). If hybrid/onsite in other cities/countries, score location very low.
+- Internships: MUST be paid. If a job is explicitly unpaid or volunteer, score it 0.
+
+=== CANDIDATE PROFILE ===
 {json.dumps(profile, indent=2) if profile else base_cv[:2000]}
 Search query: {query}
 
-=== JOBS ===
+=== JOBS TO SCORE ===
 {json.dumps(job_summaries, indent=2)}
 
-Score each job 0-100 based on:
-- Skills match (40%)
-- Role level match (25%)
-- Industry relevance (20%)
-- Location compatibility (15%)
+Scoring breakdown:
+1. Role Relevance (Software Eng / Full Stack / Frontend / Backend / Paid Intern) (35%)
+2. Technical Skills Match (Python, JS/TS, React, Node, C++, SQL, AI) (35%)
+3. Location (Remote OR Budapest Hybrid) (20%)
+4. Compensation / Paid check (10%) - Immediate 0 if unpaid internship.
 
 Output ONLY a JSON array of objects with "id" and "score" keys, sorted by score descending.
-Example: [{{"id": 1, "score": 85}}, {{"id": 3, "score": 72}}]"""
+Example: [{{"id": 1, "score": 92}}, {{"id": 3, "score": 81}}]"""
 
         response = _call_gemini(
             client,

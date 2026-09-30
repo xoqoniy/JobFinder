@@ -210,9 +210,88 @@ def init_db():
             ))
             db.commit()
             print("Auto-seeded default UserProfile in database.")
+
+        # Seed search configs if empty
+        if db.query(SearchConfig).count() == 0:
+            default_configs = [
+                SearchConfig(
+                    name="Remote - Full Stack / Software Engineer",
+                    job_title="Full Stack Software Engineer",
+                    location="Remote",
+                    remote_only=True,
+                    experience_level="entry,mid",
+                    exclude_keywords="unpaid,volunteer,no salary",
+                    platforms="linkedin,indeed,remoteok",
+                    is_active=True,
+                ),
+                SearchConfig(
+                    name="Remote - Backend Developer (Python/AI)",
+                    job_title="Backend Developer",
+                    location="Remote",
+                    remote_only=True,
+                    keywords="Python,FastAPI,Node,Django",
+                    experience_level="entry,mid",
+                    exclude_keywords="unpaid,volunteer",
+                    platforms="linkedin,indeed,remoteok",
+                    is_active=True,
+                ),
+                SearchConfig(
+                    name="Remote - Frontend Developer",
+                    job_title="Frontend Developer",
+                    location="Remote",
+                    remote_only=True,
+                    keywords="React,JavaScript,TypeScript,Vue",
+                    experience_level="entry,mid",
+                    exclude_keywords="unpaid,volunteer",
+                    platforms="linkedin,indeed,remoteok",
+                    is_active=True,
+                ),
+                SearchConfig(
+                    name="Budapest - Hybrid/Onsite Software Engineer",
+                    job_title="Software Engineer",
+                    location="Budapest, Hungary",
+                    keywords="hybrid,budapest",
+                    experience_level="entry,mid",
+                    exclude_keywords="unpaid,volunteer",
+                    platforms="linkedin,indeed",
+                    is_active=True,
+                ),
+                SearchConfig(
+                    name="Budapest - Hybrid Full Stack / Backend",
+                    job_title="Full Stack Developer",
+                    location="Budapest, Hungary",
+                    keywords="hybrid,budapest",
+                    experience_level="entry,mid",
+                    exclude_keywords="unpaid,volunteer",
+                    platforms="linkedin,indeed",
+                    is_active=True,
+                ),
+                SearchConfig(
+                    name="Paid Internship - Software / AI / Web",
+                    job_title="Software Engineer Intern",
+                    location="Budapest, Hungary",
+                    keywords="paid intern,internship,trainee",
+                    exclude_keywords="unpaid,uncompensated,volunteer,no pay,free intern",
+                    platforms="linkedin,indeed,remoteok",
+                    is_active=True,
+                ),
+                SearchConfig(
+                    name="Remote - Paid Software Intern",
+                    job_title="Software Engineer Intern",
+                    location="Remote",
+                    remote_only=True,
+                    keywords="paid,intern,internship",
+                    exclude_keywords="unpaid,uncompensated,volunteer",
+                    platforms="linkedin,indeed,remoteok",
+                    is_active=True,
+                ),
+            ]
+            db.add_all(default_configs)
+            db.commit()
+            print("Auto-seeded targeted SearchConfigs for Budapest Hybrid & Remote roles.")
     except Exception as e:
         db.rollback()
-        print(f"UserProfile seed error: {e}")
+        print(f"UserProfile/SearchConfig seed error: {e}")
     finally:
         db.close()
 
