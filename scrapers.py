@@ -504,7 +504,12 @@ class NoFluffJobsScraper(BaseScraper):
             query_terms = [q.lower() for q in query.split() if len(q) > 2]
             target_loc = (location or "").lower()
 
+            max_limit = kwargs.get("limit", 25)
+
             for item in postings:
+                if len(jobs) >= max_limit:
+                    break
+
                 title = item.get("title", "")
                 company = item.get("name", "")
                 technology = item.get("technology", "")
@@ -556,6 +561,11 @@ class NoFluffJobsScraper(BaseScraper):
                     "posted_date": datetime.datetime.utcnow(),
                     "is_easy_apply": False,
                 })
+
+            del data
+            del postings
+            import gc
+            gc.collect()
 
             logger.info(f"NoFluffJobs: found {len(jobs)} jobs for '{query}' in '{location}'")
 

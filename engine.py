@@ -238,6 +238,8 @@ class JobFinderEngine:
             raise
         finally:
             db.close()
+            import gc
+            gc.collect()
 
     def _apply_to_ready_jobs(self):
         """Apply to all jobs that are ready (have generated docs)."""
