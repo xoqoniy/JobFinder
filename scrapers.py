@@ -150,6 +150,7 @@ class LinkedInScraper(BaseScraper):
                 "location": location,
                 "start": page * 25,
                 "sortBy": "DD",  # Date descending
+                "f_TPR": "r259200",  # Past 3 days (fresh postings)
             }
 
             if experience and experience.lower() in self.EXPERIENCE_MAP:
@@ -241,6 +242,7 @@ class IndeedScraper(BaseScraper):
                 "l": location,
                 "start": page * 10,
                 "sort": "date",
+                "fromage": "3",  # Past 3 days
             }
 
             if kwargs.get("job_type"):

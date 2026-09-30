@@ -389,7 +389,9 @@ def rank_jobs(query: str, top_n: int = 20) -> list[int]:
     try:
         profile = _get_user_profile()
         base_cv = _load_base_cv()
-        jobs = db.query(Job).filter(Job.status == "new").limit(50).all()
+        jobs = db.query(Job).filter(Job.status == "new").order_by(
+            Job.posted_date.desc().nullslast(), Job.id.desc()
+        ).limit(60).all()
 
         if not jobs:
             return []
@@ -402,11 +404,12 @@ def rank_jobs(query: str, top_n: int = 20) -> list[int]:
                 "title": j.title,
                 "company": j.company,
                 "location": j.location,
+                "posted": str(j.posted_date) if j.posted_date else "Recently",
                 "description": (j.description or "")[:500],
             })
 
         prompt = f"""You are an expert tech recruiter and job matching specialist.
-Score each job from 0 to 100 based on the candidate's exact profile and level:
+Score each job from 0 to 100 based on the candidate's exact profile, level, and recency:
 
 === CANDIDATE PROFILE & LEVEL ===
 - Stage: Undergraduate Student / Junior / Entry-Level Developer (0-2 years experience).
@@ -418,6 +421,8 @@ Score each job from 0 to 100 based on the candidate's exact profile and level:
   * If the job title or description is for Senior, Lead, Staff, Principal, Architect, Director, Manager, or requires 4+ years of experience: SCORE 0 (DISQUALIFIED).
   * If the internship is unpaid/volunteer: SCORE 0 (DISQUALIFIED).
   * Target sweet spot: Junior, Entry-Level, Associate, Graduate, Intern (Paid), or Software Engineer I.
+- Recency Rule:
+  * Prioritize freshly posted jobs (within 24-72 hours) so the candidate is among the first applicants. Give freshly posted jobs higher scores.
 
 === CANDIDATE DETAILS ===
 {json.dumps(profile, indent=2) if profile else base_cv[:2000]}
