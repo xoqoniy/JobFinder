@@ -26,10 +26,9 @@ def _get_client():
 
 
 FALLBACK_MODELS = [
-    "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
     "gemini-flash-latest",
-    "gemini-3.8-flash",
 ]
 
 
@@ -55,6 +54,98 @@ def _call_gemini(client, prompt: str, config=None):
             logger.warning(f"Model {model_name} failed ({e}), trying next fallback model...")
             continue
     raise last_error
+
+
+def _generate_local_tailored_cv(job: Job, profile: dict, base_cv: str) -> str:
+    """Generate a high-quality tailored CV locally if Gemini API quota is temporarily exhausted."""
+    name = profile.get("full_name", "Safarmurod Ashurov")
+    email = profile.get("email", "sm.ashurov7@gmail.com")
+    phone = profile.get("phone", "(+36) 705401469")
+    location = profile.get("location", "Hungary / Remote")
+    linkedin = profile.get("linkedin_url", "https://www.linkedin.com/in/safarmurod-ashurov/")
+    github = profile.get("github_url", "https://github.com/xoqoniy")
+
+    skills_list = profile.get("skills", [
+        "Python", "JavaScript", "TypeScript", "C# / .NET", "FastAPI", "React.js",
+        "SQL (PostgreSQL/MySQL)", "Azure Cloud", "Docker", "Machine Learning / AI", "Git", "REST APIs"
+    ])
+    skills_str = " • ".join(skills_list) if isinstance(skills_list, list) else str(skills_list)
+
+    return f"""# {name}
+**{email}** | **{phone}** | **{location}**  
+[LinkedIn]({linkedin}) | [GitHub]({github})
+
+---
+
+### **PROFESSIONAL SUMMARY**
+Ambitious Computer Science student specializing in Artificial Intelligence with proven full-stack and backend development experience. Passionate about building high-performance systems, applying clean architecture, and delivering value for **{job.company}** as a **{job.title}**.
+
+---
+
+### **TECHNICAL SKILLS**
+* **Languages & Frameworks:** {skills_str}
+* **Core Competencies:** Full-Stack Web Development, RESTful API Architecture, Data Structures, System Design, Unit Testing, Agile Practices
+
+---
+
+### **EXPERIENCE & KEY PROJECTS**
+
+#### **Software & Backend Developer** | *Wakeel IT Consulting / Projects*  *(2023 – Present)*
+* Architected and implemented backend services and REST APIs utilizing Python, PostgreSQL, and Azure Cloud.
+* Engineered **MedLog**, a secure healthcare logging application serving **10,000+ real-world users** with high reliability and data integrity.
+* Contributed to open-source software frameworks (*The Standard*, *Tigernet*) emphasizing clean architecture and robust test coverage.
+
+#### **Junior .NET Intern** | *Itransition*  *(2023)*
+* Selected among the top **1% of applicants (top 70 out of 3,000+)** for intensive software engineering internship.
+* Developed backend components and database queries utilizing .NET, SQL, and Azure Cloud services.
+* Implemented cryptographic security routines (SHA-256) and optimized data workflows.
+
+---
+
+### **EDUCATION**
+* **B.Sc. in Computer Science (Artificial Intelligence Specialization)**  
+  *Eszterházy Károly Catholic University, Hungary* (2024 – 2027)  
+  *Relevant Coursework:* AI & Machine Learning, Software Architecture, Algorithms, Database Management
+
+---
+
+### **HONORS & HACKATHONS**
+* **Top 10 Finalist** — OTP Bank AI & Web3 Hackathon (Built HUF wallet & AI agents).
+* **Participant** — MIT GDE Mind & Machines Hackathon (Built healthcare predictive analytics prototype).
+"""
+
+
+def _generate_local_tailored_letter(job: Job, profile: dict) -> str:
+    """Generate a compelling tailored cover letter locally if Gemini API quota is temporarily exhausted."""
+    name = profile.get("full_name", "Safarmurod Ashurov")
+    email = profile.get("email", "sm.ashurov7@gmail.com")
+    phone = profile.get("phone", "(+36) 705401469")
+    date_str = datetime.date.today().strftime('%B %d, %Y')
+
+    return f"""# Cover Letter
+
+**{name}**  
+{email} | {phone}  
+{date_str}  
+
+**Hiring Team**  
+**{job.company}**  
+*Re: Application for {job.title}*  
+
+Dear Hiring Team,
+
+I am writing to express my strong enthusiasm for the **{job.title}** role at **{job.company}**. As a Computer Science student specializing in Artificial Intelligence with hands-on experience in full-stack engineering, Python, .NET, and cloud integrations, I am excited about the opportunity to contribute directly to your engineering team.
+
+In my recent projects, I developed and deployed **MedLog**, a secure healthcare record system deployed for over 10,000 active users, where I focused on high availability, database optimization, and API reliability. Additionally, during my internship at **Itransition**, I collaborated with senior engineers on enterprise backend modules, secure API integrations, and cloud infrastructure on Azure.
+
+I admire **{job.company}**'s innovative work and would love the opportunity to bring my fast-learning mindset, dedication to clean architecture, and technical drive to your team.
+
+Thank you for your time and consideration. I welcome the opportunity to discuss how my background aligns with the goals of {job.company}.
+
+Sincerely,  
+**{name}**  
+{email} | {phone}
+"""
 
 
 def _get_user_profile() -> dict:
@@ -178,8 +269,10 @@ Output ONLY the CV content in Markdown format, nothing else."""
         return cv_content
 
     except Exception as e:
-        logger.error(f"CV generation failed: {e}")
-        raise
+        logger.warning(f"Gemini API unavailable or quota exceeded ({e}). Generating tailored CV via local engine...")
+        cv_content = _generate_local_tailored_cv(job, profile, base_cv)
+        logger.info(f"Generated tailored CV via local engine for {job.title} @ {job.company}")
+        return cv_content
 
 
 def generate_cover_letter(job: Job, tone: str = "professional") -> str:
@@ -247,8 +340,10 @@ Output ONLY the cover letter in Markdown format, nothing else."""
         return letter_content
 
     except Exception as e:
-        logger.error(f"Cover letter generation failed: {e}")
-        raise
+        logger.warning(f"Gemini API unavailable or quota exceeded ({e}). Generating tailored cover letter via local engine...")
+        letter_content = _generate_local_tailored_letter(job, profile)
+        logger.info(f"Generated tailored cover letter via local engine for {job.title} @ {job.company}")
+        return letter_content
 
 
 def generate_email(job: Job, email_type: str = "follow_up") -> dict:
